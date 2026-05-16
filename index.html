@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Residencias DAN Torre A - Seguimiento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .donut-chart { transform: rotate(-90deg); }
+        .donut-segment { transition: stroke-dasharray 0.8s ease-in-out; }
+        .tab-active { border-bottom: 3px solid #2563eb; color: #1e40af; font-weight: 700; background-color: #eff6ff; }
+        
+        @media print { 
+            @page { size: letter; margin: 1cm; }
+            body { background-color: white !important; }
+            .no-print { display: none !important; }
+            .shadow-sm { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+            .print-compact { padding: 0.5rem !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-900 min-h-screen relative">
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p class="text-sm font-bold text-slate-700 uppercase tracking-widest">Sincronizando con la Nube...</p>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto p-4 md:p-6 pb-20">
+        
+        <!-- Encabezado con Imagen de Ascensor -->
+        <header class="flex justify-between items-center mb-6 border-b-2 border-slate-200 pb-4">
+            <div class="flex items-center gap-4">
+                <!-- SVG recreado basado en la imagen del usuario -->
+                <div class="w-16 h-16 shrink-0">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="15" y="10" width="70" height="85" rx="4" fill="#cbd5e1" stroke="#000" stroke-width="3"/>
+                        <rect x="25" y="20" width="50" height="75" fill="#e2e8f0" stroke="#000" stroke-width="2"/>
+                        <line x1="50" y1="20" x2="50" y2="95" stroke="#000" stroke-width="2"/>
+                        <rect x="85" y="40" width="12" height="25" rx="2" fill="#bae6fd" stroke="#000" stroke-width="2"/>
+                        <path d="M91 45L94 49H88L91 45Z" fill="#000"/>
+                        <path d="M91 60L88 56H94L91 60Z" fill="#000"/>
+                        <rect x="40" y="2" width="20" height="8" rx="2" fill="#bae6fd" stroke="#000" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight text-slate-800 leading-none">RESIDENCIAS DAN TORRE A</h1>
+                    <p class="text-blue-600 text-xs font-black uppercase tracking-[0.2em] mt-1">Seguimiento de Gestión</p>
+                </div>
+            </div>
+            <div class="text-right no-print flex gap-2">
+                <button onclick="initData()" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-100 shadow-sm transition-all" title="Actualizar datos desde la nube">
+                    <i class="fas fa-sync-alt mr-2"></i>Actualizar
+                </button>
+                <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-md transition-all">
+                    <i class="fas fa-file-pdf mr-2"></i>Exportar PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Navegación -->
+        <div class="flex border-b border-slate-200 mb-6 no-print bg-white rounded-t-xl overflow-hidden">
+            <button onclick="switchTab('resumen')" id="tab-resumen" class="flex-1 py-3 text-xs uppercase tracking-widest tab-active">Global</button>
+            <button onclick="switchTab('detalle')" id="tab-detalle" class="flex-1 py-3 text-xs uppercase tracking-widest text-slate-500 font-bold hover:bg-slate-50 border-l border-slate-100">Detalle</button>
+        </div>
+
+        <!-- Dashboard Centralizado -->
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-6">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <!-- Gráfica Protagonista -->
+                <div class="relative w-44 h-44 shrink-0">
+                    <svg viewBox="0 0 36 36" class="donut-chart w-full h-full">
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#f1f5f9" stroke-width="4.5"></circle>
+                        <circle id="donutCircle" cx="18" cy="18" r="15.915" fill="transparent" stroke="#2563eb" stroke-width="4.5" stroke-dasharray="0 100" class="donut-segment"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span id="percentLabel" class="text-3xl font-black text-slate-800">0%</span>
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Cobrado</span>
+                    </div>
+                </div>
+
+                <!-- Métricas Clave -->
+                <div class="flex-grow w-full text-center md:text-left">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Recaudado</p>
+                            <h2 id="totalRecaudado" class="text-3xl font-black text-slate-900 leading-none">$0</h2>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Unidades</p>
+                            <p id="unidadesPagas" class="text-2xl font-black text-blue-600 leading-none">0 / 72</p>
+                        </div>
+                    </div>
+                    <!-- Barra de Progreso -->
+                    <div class="mt-6">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-[10px] font-black text-slate-500 uppercase">Avance General del Proyecto</span>
+                            <span id="metaText" class="text-[10px] font-black text-slate-900 uppercase underline decoration-blue-500">Meta: $0</span>
+                        </div>
+                        <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                            <div id="progressBar" class="h-full bg-blue-600 transition-all duration-1000 shadow-lg" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA 1: RESUMEN GLOBAL (Dos Columnas) -->
+        <div id="view-resumen" class="block">
+            <div id="summaryGrid" class="grid grid-cols-2 gap-x-6 gap-y-2">
+                <!-- Se llena con JS en dos columnas -->
+            </div>
+            <div class="mt-8 border-t-2 border-dashed border-slate-200 pt-4 text-center">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+                    Este documento es un reporte interno de gestión administrativa para la reparación del ascensor.<br>
+                    Cuota fija por apartamento: $87.00 USD.
+                </p>
+            </div>
+        </div>
+
+        <!-- VISTA 2: DETALLE OPERATIVO -->
+        <div id="view-detalle" class="hidden">
+            <div id="buildingGrid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // LA MAGIA OCURRE AQUÍ: Conexión con Google Sheets
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzG2axXdLsq-wbySaRaKGZhFAvrqnJnH9FEcU_2TdFaMV2UOg2yiFKEDBN8WEYxT13Vww/exec';
+        
+        const CUOTA = 87;
+        const PISOS = 18;
+        const APTOS_POR_PISO = 4;
+        const TOTAL_APTOS = PISOS * APTOS_POR_PISO;
+        
+        const iniciales = { 
+            4: [1, 2, 3], 5: [1, 3, 4], 8: [1, 2], 9: [2, 4], 
+            10: [1, 3], 11: [1, 2, 3, 4], 12: [4], 13: [1, 2], 
+            14: [1, 2, 3], 16: [2], 17: [3, 4], 18: [1, 2] 
+        };
+
+        let data = [];
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+            } else {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
+        }
+        
+        async function initData() {
+            showLoading(true);
+            try {
+                // Descargar datos desde Google Sheets
+                const response = await fetch(SCRIPT_URL);
+                const fetchedData = await response.json();
+                
+                if (fetchedData && fetchedData.length > 0) {
+                    data = fetchedData;
+                } else {
+                    // Si la hoja está vacía (primera vez que se abre), generamos los datos
+                    data = [];
+                    for (let f = PISOS; f >= 1; f--) {
+                        const pagadosEnPiso = iniciales[f] || [];
+                        for (let a = 1; a <= APTOS_POR_PISO; a++) {
+                            data.push({ 
+                                id: `${f}-${a}`, piso: f, apto: a, 
+                                pagado: pagadosEnPiso.includes(a) 
+                            });
+                        }
+                    }
+                    // Y los enviamos para poblar la hoja de cálculo masivamente
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                }
+            } catch (error) {
+                console.error("Error al cargar datos desde Google Sheets:", error);
+                alert("Error al cargar los datos. Se usará una versión de solo lectura temporal.");
+                // Fallback temporal si falla el internet
+                data = [];
+                for (let f = PISOS; f >= 1; f--) {
+                    for (let a = 1; a <= APTOS_POR_PISO; a++) data.push({ id: `${f}-${a}`, piso: f, apto: a, pagado: false });
+                }
+            } finally {
+                showLoading(false);
+                render();
+            }
+        }
+
+        async function togglePago(id) {
+            const index = data.findIndex(item => item.id === id);
+            const estadoAnterior = data[index].pagado;
+            const nuevoEstado = !estadoAnterior;
+            
+            // Actualización Optimista: Actualizamos la UI inmediatamente para que el usuario la sienta rápida
+            data[index].pagado = nuevoEstado;
+            render();
+            
+            try {
+                // Enviamos el cambio a Google Sheets en segundo plano
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ id: id, pagado: nuevoEstado })
+                });
+            } catch (error) {
+                console.error("Error guardando en la nube", error);
+                // Si la conexión falla, revertimos el cambio en la pantalla y avisamos
+                data[index].pagado = estadoAnterior;
+                render();
+                alert("Hubo un error al guardar tu cambio en la nube. Revisa tu conexión a internet.");
+            }
+        }
+
+        function switchTab(tab) {
+            const btnResumen = document.getElementById('tab-resumen');
+            const btnDetalle = document.getElementById('tab-detalle');
+            const viewResumen = document.getElementById('view-resumen');
+            const viewDetalle = document.getElementById('view-detalle');
+
+            if (tab === 'resumen') {
+                btnResumen.className = "flex-1 py-3 text-xs uppercase tracking-widest tab-active";
+                btnDetalle.className = "flex-1 py-3 text-xs uppercase tracking-widest text-slate-500 font-bold hover:bg-slate-50 border-l border-slate-100";
+                viewResumen.classList.replace('hidden', 'block');
+                viewDetalle.classList.replace('block', 'hidden');
+            } else {
+                btnDetalle.className = "flex-1 py-3 text-xs uppercase tracking-widest tab-active";
+                btnResumen.className = "flex-1 py-3 text-xs uppercase tracking-widest text-slate-500 font-bold hover:bg-slate-50 border-r border-slate-100";
+                viewDetalle.classList.replace('hidden', 'block');
+                viewResumen.classList.replace('block', 'hidden');
+            }
+        }
+
+        function render() {
+            const grid = document.getElementById('buildingGrid');
+            const summaryGrid = document.getElementById('summaryGrid');
+            grid.innerHTML = '';
+            summaryGrid.innerHTML = '';
+
+            const pagados = data.filter(d => d.pagado).length;
+            const porcentaje = ((pagados / TOTAL_APTOS) * 100).toFixed(1);
+            const recaudado = pagados * CUOTA;
+            const metaTotal = TOTAL_APTOS * CUOTA;
+
+            document.getElementById('totalRecaudado').innerText = `$${recaudado.toLocaleString('en-US')}`;
+            document.getElementById('unidadesPagas').innerText = `${pagados} / ${TOTAL_APTOS}`;
+            document.getElementById('percentLabel').innerText = `${Math.round(porcentaje)}%`;
+            document.getElementById('metaText').innerText = `Meta: $${metaTotal.toLocaleString('en-US')}`;
+            document.getElementById('progressBar').style.width = `${porcentaje}%`;
+            document.getElementById('donutCircle').setAttribute('stroke-dasharray', `${porcentaje} 100`);
+
+            for (let f = PISOS; f >= 1; f--) {
+                const pagadosEnPiso = data.filter(d => d.piso === f && d.pagado).length;
+                
+                // Resumen Global - Tabla de 2 columnas
+                let statusColor = pagadosEnPiso === 4 ? 'text-emerald-600' : (pagadosEnPiso === 0 ? 'text-slate-400' : 'text-blue-600');
+                let statusText = pagadosEnPiso === 4 ? 'COMPLETO' : 'PENDIENTE';
+                
+                summaryGrid.innerHTML += `
+                    <div class="flex items-center justify-between border-b border-slate-100 py-1.5 px-2">
+                        <span class="text-xs font-black text-slate-700">PISO ${f}</span>
+                        <div class="flex items-center gap-4">
+                            <span class="text-[10px] font-bold text-slate-500">${pagadosEnPiso} / 4</span>
+                            <span class="text-[9px] font-black w-14 text-right ${statusColor}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Detalle Operativo - Lista
+                const floorHeader = document.createElement('div');
+                floorHeader.className = 'col-span-1 mb-2';
+                let listHtml = `<div class="flex items-center mb-1 px-1"><span class="text-[9px] font-black bg-slate-200 px-2 py-0.5 rounded">PISO ${f}</span></div><div class="space-y-1">`;
+                
+                const aptosDePiso = data.filter(d => d.piso === f).sort((a,b) => a.apto - b.apto);
+                aptosDePiso.forEach(apt => {
+                    listHtml += `
+                        <div onclick="togglePago('${apt.id}')" class="cursor-pointer flex items-center justify-between p-2 rounded border transition-all ${apt.pagado ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-100 hover:bg-slate-50'}">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded flex items-center justify-center font-black text-xs ${apt.pagado ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}">${f}${apt.apto}</div>
+                                <span class="text-[9px] font-bold uppercase ${apt.pagado ? 'text-emerald-800' : 'text-slate-400'}">${apt.pagado ? 'Pagado' : 'Pendiente'}</span>
+                            </div>
+                            ${apt.pagado ? '<i class="fas fa-check text-emerald-500 text-xs"></i>' : ''}
+                        </div>`;
+                });
+                floorHeader.innerHTML = listHtml + '</div>';
+                grid.appendChild(floorHeader);
+            }
+        }
+        
+        // Iniciar la app obteniendo datos de la Nube
+        initData();
+    </script>
+</body>
+</html>
