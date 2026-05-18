@@ -202,18 +202,6 @@
         }
 
         async function togglePago(id) {
-            // Protección por contraseña básica
-            const passGuardado = sessionStorage.getItem('adminPass');
-            if (passGuardado !== 'dan2024') {
-                const pass = prompt('Ingresa la contraseña de administrador para poder modificar pagos:');
-                if (pass === 'dan2024') {
-                    sessionStorage.setItem('adminPass', 'dan2024');
-                } else {
-                    if (pass !== null) alert('Contraseña incorrecta. Solo lectura.');
-                    return; // Detiene la ejecución si no es admin
-                }
-            }
-
             const index = data.findIndex(item => item.id === id);
             const estadoAnterior = data[index].pagado;
             const nuevoEstado = !estadoAnterior;
