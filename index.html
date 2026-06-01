@@ -97,9 +97,10 @@
                         </div>
                         <div>
                             <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Aptos Completos</p>
-                            <div class="flex items-baseline gap-2">
+                            <div class="flex items-baseline gap-2 flex-wrap">
                                 <p id="unidadesPagas" class="text-2xl font-black text-blue-600 leading-none">0 / 72</p>
-                                <p id="unidadesAbonos" class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded" style="display: none;">0 Aptos. con abono</p>
+                                <p id="unidadesAbonos" class="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded" style="display: none;">0 Aptos. con abono</p>
+                                <p id="unidadesPendientes" class="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded" style="display: none;">0 Aptos. pendientes</p>
                             </div>
                         </div>
                     </div>
@@ -293,14 +294,23 @@
             const porcentaje = ((recaudado / metaTotal) * 100).toFixed(1); 
             const pagadosCompletos = data.filter(d => d.pagado).length;
             const aptosConAbono = data.filter(d => !d.pagado && d.monto > 0).length;
+            const aptosPendientes = data.filter(d => !d.pagado && d.monto === 0).length;
 
             document.getElementById('totalRecaudado').innerText = `$${recaudado.toLocaleString('en-US')}`;
             document.getElementById('unidadesPagas').innerText = `${pagadosCompletos} / ${TOTAL_APTOS}`;
+            
             const elAbonos = document.getElementById('unidadesAbonos');
             if (elAbonos) {
                 elAbonos.innerText = `${aptosConAbono} Apto${aptosConAbono !== 1 ? 's' : ''}. con abono`;
                 elAbonos.style.display = aptosConAbono > 0 ? 'inline-block' : 'none';
             }
+            
+            const elPendientes = document.getElementById('unidadesPendientes');
+            if (elPendientes) {
+                elPendientes.innerText = `${aptosPendientes} Apto${aptosPendientes !== 1 ? 's' : ''}. en $0`;
+                elPendientes.style.display = aptosPendientes > 0 ? 'inline-block' : 'none';
+            }
+            
             document.getElementById('percentLabel').innerText = `${Math.round(porcentaje)}%`;
             document.getElementById('metaText').innerText = `Meta: $${metaTotal.toLocaleString('en-US')}`;
             document.getElementById('progressBar').style.width = `${porcentaje}%`;
