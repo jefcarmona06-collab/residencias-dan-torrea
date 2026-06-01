@@ -97,7 +97,10 @@
                         </div>
                         <div>
                             <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Aptos Completos</p>
-                            <p id="unidadesPagas" class="text-2xl font-black text-blue-600 leading-none">0 / 72</p>
+                            <div class="flex items-baseline gap-2">
+                                <p id="unidadesPagas" class="text-2xl font-black text-blue-600 leading-none">0 / 72</p>
+                                <p id="unidadesAbonos" class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded" style="display: none;">0 Abonos</p>
+                            </div>
                         </div>
                     </div>
                     <!-- Barra de Progreso -->
@@ -289,9 +292,15 @@
             const recaudado = data.reduce((sum, item) => sum + (Number(item.monto) || 0), 0);
             const porcentaje = ((recaudado / metaTotal) * 100).toFixed(1); 
             const pagadosCompletos = data.filter(d => d.pagado).length;
+            const aptosConAbono = data.filter(d => !d.pagado && d.monto > 0).length;
 
             document.getElementById('totalRecaudado').innerText = `$${recaudado.toLocaleString('en-US')}`;
             document.getElementById('unidadesPagas').innerText = `${pagadosCompletos} / ${TOTAL_APTOS}`;
+            const elAbonos = document.getElementById('unidadesAbonos');
+            if (elAbonos) {
+                elAbonos.innerText = `${aptosConAbono} Abono${aptosConAbono !== 1 ? 's' : ''}`;
+                elAbonos.style.display = aptosConAbono > 0 ? 'inline-block' : 'none';
+            }
             document.getElementById('percentLabel').innerText = `${Math.round(porcentaje)}%`;
             document.getElementById('metaText').innerText = `Meta: $${metaTotal.toLocaleString('en-US')}`;
             document.getElementById('progressBar').style.width = `${porcentaje}%`;
@@ -299,18 +308,24 @@
 
             for (let f = PISOS; f >= 1; f--) {
                 const pagadosEnPiso = data.filter(d => d.piso === f && d.pagado).length;
+                const abonosEnPiso = data.filter(d => d.piso === f && !d.pagado && d.monto > 0).length;
                 
                 // Resumen Global - Tabla de 2 columnas
-                let statusColor = pagadosEnPiso === 4 ? 'text-emerald-600' : (pagadosEnPiso === 0 ? 'text-slate-400' : 'text-blue-600');
+                let statusColor = pagadosEnPiso === 4 ? 'text-emerald-600' : (pagadosEnPiso === 0 && abonosEnPiso === 0 ? 'text-slate-400' : 'text-blue-600');
                 let statusText = pagadosEnPiso === 4 ? 'COMPLETO' : 'PENDIENTE';
                 
+                let abonoBadge = abonosEnPiso > 0 ? `<span class="text-[8px] bg-blue-50 text-blue-600 px-1 rounded font-bold border border-blue-100">${abonosEnPiso} Abono${abonosEnPiso > 1 ? 's' : ''}</span>` : '';
+
                 summaryGrid.innerHTML += `
-                    <div class="flex items-center justify-between border-b border-slate-100 py-1.5 px-2">
-                        <span class="text-xs font-black text-slate-700 whitespace-nowrap">PISO ${f}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold text-slate-500 whitespace-nowrap">${pagadosEnPiso} / 4</span>
-                            <span class="text-[9px] font-black w-16 text-right whitespace-nowrap ${statusColor}">${statusText}</span>
+                    <div class="flex flex-col border-b border-slate-100 py-1.5 px-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black text-slate-700 whitespace-nowrap">PISO ${f}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-slate-500 whitespace-nowrap">${pagadosEnPiso} / 4</span>
+                                <span class="text-[9px] font-black w-16 text-right whitespace-nowrap ${statusColor}">${statusText}</span>
+                            </div>
                         </div>
+                        ${abonoBadge ? `<div class="flex justify-end mt-0.5">${abonoBadge}</div>` : ''}
                     </div>
                 `;
 
