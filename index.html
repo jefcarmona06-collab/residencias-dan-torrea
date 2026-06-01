@@ -285,7 +285,7 @@
             summaryGrid.innerHTML = '';
 
             // Nuevos cálculos basados en montos
-            const metaTotal = TOTAL_APTOS * CUOTA;
+            const metaTotal = 6250; // Monto presupuestado fijo
             const recaudado = data.reduce((sum, item) => sum + (Number(item.monto) || 0), 0);
             const porcentaje = ((recaudado / metaTotal) * 100).toFixed(1); 
             const pagadosCompletos = data.filter(d => d.pagado).length;
