@@ -6,8 +6,6 @@
     <title>Residencias DAN Torre A - Seguimiento</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Librería para capturar a JPG -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -64,8 +62,8 @@
                 <button onclick="initData()" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-100 shadow-sm transition-all" title="Actualizar datos desde la nube">
                     <i class="fas fa-sync-alt mr-2"></i>Actualizar
                 </button>
-                <button onclick="exportToJPG()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-md transition-all">
-                    <i class="fas fa-image mr-2"></i>Exportar JPG
+                <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-md transition-all">
+                    <i class="fas fa-file-pdf mr-2"></i>Exportar PDF
                 </button>
             </div>
         </header>
@@ -311,38 +309,6 @@
                     view.classList.replace('block', 'hidden');
                 }
             });
-        }
-
-        async function exportToJPG() {
-            // Ocultar elementos de UI como botones que no deben salir en la imagen
-            const noPrintElements = document.querySelectorAll('.no-print');
-            noPrintElements.forEach(el => el.style.display = 'none');
-            
-            showLoading(true, "Generando Imagen...");
-            
-            // Pausa breve para asegurar que el DOM se haya ocultado antes de capturar
-            await new Promise(r => setTimeout(r, 100));
-            
-            try {
-                const captureArea = document.getElementById('capture-area');
-                const canvas = await html2canvas(captureArea, {
-                    scale: 2, // Mejor resolución para lectura
-                    backgroundColor: '#f8fafc',
-                    useCORS: true
-                });
-                
-                const link = document.createElement('a');
-                link.download = 'Residencias_DAN_Reporte.jpg';
-                link.href = canvas.toDataURL('image/jpeg', 0.9);
-                link.click();
-            } catch (err) {
-                console.error("Error exportando JPG:", err);
-                alert("Hubo un error al generar la imagen.");
-            } finally {
-                // Restaurar botones
-                noPrintElements.forEach(el => el.style.display = '');
-                showLoading(false);
-            }
         }
 
         function render() {
